@@ -73,4 +73,12 @@ class BookingServiceTest {
         assertEquals(bob, bookings.get(0).user());
         assertEquals(0, store.waitlistForRoom(roomA).size());
     }
+
+    @Test
+    void isAvailableWhenBookingEndsDuringInterval() {
+        BookingService svc = newService();
+        svc.book(roomA, alice, new TimeInterval(600, 660));
+        boolean available = svc.isAvailable(roomA, new TimeInterval(630, 700));
+        assertEquals(false, available);
+    }
 }
