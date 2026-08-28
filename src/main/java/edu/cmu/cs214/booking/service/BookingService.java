@@ -46,4 +46,12 @@ public class BookingService {
     public List<Booking> listBookings(Room room) {
         return store.bookingsForRoom(room);
     }
+
+    /**
+     * Cancels a booking. Removes the booking with the id to free its slot.
+     * If there's no booking with that id, then do nothing.
+     */
+    public void cancelBooking(String bookingId) {
+        store.removeBooking(bookingId);
+    }
 }
