@@ -58,4 +58,19 @@ class BookingServiceTest {
         svc.book(roomA, bob, new TimeInterval(660, 720));
         assertEquals(2, svc.listBookings(roomA).size());
     }
+
+    @Test
+    void cancelBookingPromotesWaitlistedUser() {
+        InMemoryBookingStore store = new InMemoryBookingStore();
+        BookingService svc = new BookingService(store);
+        BookingResult.Confirmed r1 = (BookingResult.Confirmed) svc.book(roomA, alice, new TimeInterval(600, 660));
+        svc.book(roomA, bob, new TimeInterval(600, 660)); // Bob gets waitlisted
+        
+        svc.cancelBooking(r1.booking().id());
+        
+        java.util.List<edu.cmu.cs214.booking.domain.Booking> bookings = svc.listBookings(roomA);
+        assertEquals(1, bookings.size());
+        assertEquals(bob, bookings.get(0).user());
+        assertEquals(0, store.waitlistForRoom(roomA).size());
+    }
 }
