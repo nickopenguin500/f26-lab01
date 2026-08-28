@@ -1,3 +1,4 @@
+Agent tool: Google Antigravity (VSCode Extension) with Gemini Pro
 # Lab 1 Starter: Booking Service
 
 A small room-booking service. Users book rooms for time intervals, and if a room is
