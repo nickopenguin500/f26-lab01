@@ -63,15 +63,33 @@ class BookingServiceTest {
     void cancelBookingPromotesWaitlistedUser() {
         InMemoryBookingStore store = new InMemoryBookingStore();
         BookingService svc = new BookingService(store);
-        BookingResult.Confirmed r1 = (BookingResult.Confirmed) svc.book(roomA, alice, new TimeInterval(600, 660));
-        svc.book(roomA, bob, new TimeInterval(600, 660)); // Bob gets waitlisted
         
+        User charlie = new User("u3", "Charlie");
+        User dave = new User("u4", "Dave");
+
+        // Confirmed bookings
+        BookingResult.Confirmed r1 = (BookingResult.Confirmed) svc.book(roomA, alice, new TimeInterval(600, 660));
+        svc.book(roomA, charlie, new TimeInterval(660, 720));
+        
+        // Waitlisted users
+        svc.book(roomA, bob, new TimeInterval(600, 720)); // First in line, overlaps with Alice AND Charlie
+        svc.book(roomA, dave, new TimeInterval(600, 660)); // Second in line, overlaps only with Alice
+        
+        // Cancel Alice's booking
         svc.cancelBooking(r1.booking().id());
         
+        // Bob still overlaps with Charlie, so Dave should be promoted instead.
         java.util.List<edu.cmu.cs214.booking.domain.Booking> bookings = svc.listBookings(roomA);
-        assertEquals(1, bookings.size());
-        assertEquals(bob, bookings.get(0).user());
-        assertEquals(0, store.waitlistForRoom(roomA).size());
+        assertEquals(2, bookings.size()); // Charlie and Dave
+        
+        boolean hasCharlie = bookings.stream().anyMatch(b -> b.user().equals(charlie));
+        boolean hasDave = bookings.stream().anyMatch(b -> b.user().equals(dave));
+        assertEquals(true, hasCharlie);
+        assertEquals(true, hasDave);
+        
+        // Waitlist should still contain Bob
+        assertEquals(1, store.waitlistForRoom(roomA).size());
+        assertEquals(bob, store.waitlistForRoom(roomA).get(0).user());
     }
 
     @Test
