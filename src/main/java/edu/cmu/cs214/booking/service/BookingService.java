@@ -52,6 +52,30 @@ public class BookingService {
      * If there's no booking with that id, then do nothing.
      */
     public void cancelBooking(String bookingId) {
+        java.util.Optional<Booking> bookingOpt = store.findBooking(bookingId);
+        if (bookingOpt.isEmpty()) {
+            return;
+        }
+        
+        Booking cancelledBooking = bookingOpt.get();
+        Room room = cancelledBooking.room();
         store.removeBooking(bookingId);
+
+        List<WaitlistEntry> waitlist = store.waitlistForRoom(room);
+        List<WaitlistEntry> sortedWaitlist = waitlist.stream()
+                .sorted(java.util.Comparator.comparingInt(WaitlistEntry::seq))
+                .toList();
+
+        for (WaitlistEntry entry : sortedWaitlist) {
+            boolean overlaps = store.bookingsForRoom(room).stream()
+                    .anyMatch(b -> b.interval().overlaps(entry.interval()));
+            
+            if (!overlaps) {
+                Booking newBooking = new Booking("b" + nextBookingSeq++, room, entry.user(), entry.interval());
+                store.addBooking(newBooking);
+                store.removeWaitlistEntry(entry.id());
+                break;
+            }
+        }
     }
 }
